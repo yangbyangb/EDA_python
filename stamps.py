@@ -53,7 +53,7 @@ while line:
                 RCL_Value = unit_transform(RCL_pattern.group(4))  # Value
                 tmp_array = ([RCL_N1, RCL_N2, RCL_Value])
                 if RCL_index == 1:
-                    RCL_array = np.column_stack((RCL_array, tmp_array))
+                    RCL_array = np.row_stack((RCL_array, tmp_array))
                 else:
                     RCL_array = tmp_array
                     RCL_index = 1
@@ -161,14 +161,24 @@ print(VI_array)
 
 # 运算
 i += 1
-#  a = np.zeros([i, i])  # i*i矩阵
-#  b = np.zeros([i, 1])
-#  c = np.zeros([i, 1])
 
-#  if RCL_pattern:
-#    a[RCL_N1, RCL_N1] += 1 / RCL_Value
-#    a[RCL_N2, RCL_N2] += 1 / RCL_Value
-#    a[RCL_N1, RCL_N2] -= 1 / RCL_Value
-#    a[RCL_N2, RCL_N1] -= 1 / RCL_Value
+R_row_num = RCL_array.shape[0]  # 矩阵的行数
+R_col_num = RCL_array.shape[1]  # 矩阵的列数
+
+a = np.zeros([i, i])  # i*i矩阵
+b = np.zeros([i, 1])
+c = np.zeros([i, 1])
+
+for index in range(R_row_num):
+    N1 = RCL_array[index, 0]
+    N2 = RCL_array[index, 1]
+    G_Value = 1 / RCL_array[index, 2]
+    if RCL_index:
+        a[N1, N1] += G_Value
+        a[N2, N2] += G_Value
+        a[N1, N2] -= G_Value
+        a[N2, N1] -= G_Value
+
+print(a)
 
 file.close()
