@@ -17,9 +17,11 @@ def unit_transform(value):
 line = file.readline()
 
 i = 0
-RCL_index = 0
-EG_index = 0
-VI_index = 0
+R_index = 0
+C_index = 0
+L_index = 0
+G_index = 0
+I_index = 0
 while line:
     if not (line_number == 0):  # 忽略第一行
         if not line[0] == '.':
@@ -31,7 +33,9 @@ while line:
                 print("\ncomment line:\t", line_number, "    ", line[:-1])  # 输出注释行
 
             # instance
-            RCL_pattern = re.match(r'(^[RCL].*) (.*) (.*) ([0-9.]*[FPNUMKGT]?)[FH]?', line, re.I)  # 匹配RCL器件
+            R_pattern = re.match(r'(^R.*) (.*) (.*) ([0-9.]*[FPNUMKGT]?)(ohm)?', line, re.I)
+            C_pattern = re.match(r'(^C.*) (.*) (.*) ([0-9.]*[FPNUMKGT]?)F?', line, re.I)
+            L_pattern = re.match(r'(^L.*) (.*) (.*) ([0-9.]*[FPNUMKGT]?)H?', line, re.I)
             # D
             D_pattern = re.match(r'(^D.*) (.*) (.*) (.*)', line, re.I)
             # Q
@@ -40,23 +44,49 @@ while line:
             MOS_pattern = re.match(
                 r'(^M.*) (.*) (.*) (.*) (.*) (.*) ([LW])=([0-9.]*[FPNUMKGT]?) ([LW])=([0-9.]*[FPNUMKGT]?)', line, re.I)
             #     1      2    3    4    5    6    7      8                     9      10
-            VI_pattern = re.match(
-                r'(^[VI].) (.*) (.*) ([AD]C)?(=)?( ?)([0-9.]*[FPNUMKGT]?)[VA]?(,?)( ?)([0-9.]*$)?', line, re.I)
-            #     1  Name  2 N+ 3 N- 4       5   6   7                        8   9   10
-            EG_pattern = re.match(r'(^[EG].) (.*) (.*) (.*) (.*) ([0-9.]*[FPNUMKGT]?)(mho)?', line, re.I)
-            FH_pattern = re.match(r'(^[FH].) (.*) (.*) (V.*) ([0-9.]*[FPNUMKGT]?)(ohm)?', line, re.I)
+            V_pattern = re.match(
+                r'(^V.) (.*) (.*) ([AD]C)?(=)?( ?)([0-9.]*[FPNUMKGT]?)V?(,?)( ?)([0-9.]*$)?', line, re.I)
+            #     1     2 N+ 3 N- 4       5   6   7                     8   9   10
+            I_pattern = re.match(
+                r'(^I.) (.*) (.*) ([AD]C)?(=)?( ?)([0-9.]*[FPNUMKGT]?)A?(,?)( ?)([0-9.]*$)?', line, re.I)
+            G_pattern = re.match(r'(^G.) (.*) (.*) (.*) (.*) ([0-9.]*[FPNUMKGT]?)(mho)?', line, re.I)
+            E_pattern = re.match(r'(^E.) (.*) (.*) (.*) (.*) ([0-9.]*[FPNUMKGT]?)', line, re.I)
+            F_pattern = re.match(r'(^F.) (.*) (.*) (V.*) ([0-9.]*[FPNUMKGT]?)?', line, re.I)
+            H_pattern = re.match(r'(^H.) (.*) (.*) (V.*) ([0-9.]*[FPNUMKGT]?)(ohm)?', line, re.I)
 
-            if RCL_pattern:
-                RCL_N1 = int(RCL_pattern.group(2))  # N1
-                RCL_N2 = int(RCL_pattern.group(3))  # N2
-                i = max(i, RCL_N1, RCL_N2)
-                RCL_Value = unit_transform(RCL_pattern.group(4))  # Value
-                tmp_array = ([RCL_N1, RCL_N2, RCL_Value])
-                if RCL_index == 1:
-                    RCL_array = np.row_stack((RCL_array, tmp_array))
+            if R_pattern:
+                R_Np = int(R_pattern.group(2))  # Np
+                R_Nn = int(R_pattern.group(3))  # Nn
+                i = max(i, R_Np, R_Nn)
+                R_Value = unit_transform(R_pattern.group(4))  # Value
+                tmp_array = ([R_Np, R_Nn, R_Value])
+                if R_index == 1:
+                    R_array = np.row_stack((R_array, tmp_array))
                 else:
-                    RCL_array = tmp_array
-                    RCL_index = 1
+                    R_array = tmp_array
+                    R_index = 1
+            elif C_pattern:
+                C_Np = int(C_pattern.group(2))  # Np
+                C_Nn = int(C_pattern.group(3))  # Nn
+                i = max(i, C_Np, C_Nn)
+                C_Value = unit_transform(C_pattern.group(4))  # Value
+                tmp_array = ([C_Np, C_Nn, C_Value])
+                if C_index == 1:
+                    C_array = np.row_stack((C_array, tmp_array))
+                else:
+                    C_array = tmp_array
+                    C_index = 1
+            elif L_pattern:
+                L_Np = int(L_pattern.group(2))  # Np
+                L_Nn = int(L_pattern.group(3))  # Nn
+                i = max(i, L_Np, L_Nn)
+                L_Value = unit_transform(L_pattern.group(4))  # Value
+                tmp_array = ([L_Np, L_Nn, L_Value])
+                if L_index == 1:
+                    L_array = np.row_stack((L_array, tmp_array))
+                else:
+                    L_array = tmp_array
+                    L_index = 1
             elif D_pattern:
                 print("\nName:\t", D_pattern.group(1),
                       "\nNode1:\t", D_pattern.group(2),
@@ -77,42 +107,55 @@ while line:
                       "\nModel:\t", MOS_pattern.group(6),
                       "\n", MOS_pattern.group(7), ":\t", MOS_pattern.group(8),
                       "\n", MOS_pattern.group(9), ":\t", MOS_pattern.group(10))
-            elif VI_pattern:
-                VI_N1 = int(VI_pattern.group(2))
-                VI_N2 = int(VI_pattern.group(3))
-                if VI_pattern.group(4):
-                    print(VI_pattern.group(4), "Value:\t", VI_pattern.group(7))
-                # else:
-                #    print("DC Value:\t", VI_pattern.group(7))
-                VI_value = unit_transform(VI_pattern.group(7))
-                if VI_pattern.group(10):
-                    print("AC Phase:\t", VI_pattern.group(10))
-                    VI_value = unit_transform(VI_pattern.group(10))
-                tmp_array = [VI_N1, VI_N2, VI_value]
-                if VI_index == 1:
-                    VI_array = np.column_stack((VI_array, tmp_array))
+            elif V_pattern:
+                V_Np = int(V_pattern.group(2))
+                V_Nn = int(V_pattern.group(3))
+                if V_pattern.group(4):
+                    print(V_pattern.group(4), "Value:\t", V_pattern.group(7))
+                V_value = unit_transform(V_pattern.group(7))
+                if V_pattern.group(10):
+                    print("AC Phase:\t", V_pattern.group(10))
+                    V_value = unit_transform(V_pattern.group(10))
+                tmp_array = [V_Np, V_Nn, V_value]
+                if V_index == 1:
+                    V_array = np.column_stack((V_array, tmp_array))
                 else:
-                    VI_array = tmp_array
-                    VI_index = 1
-            elif EG_pattern:
-                EG_N1 = int(EG_pattern.group(2))
-                EG_N2 = int(EG_pattern.group(3))
-                EG_NC1 = int(EG_pattern.group(4))
-                EG_NC2 = int(EG_pattern.group(5))
-                i = max(i, EG_N1, EG_N2, EG_NC1, EG_NC2)
-                EG_Value = unit_transform(EG_pattern.group(6))
-                tmp_array = [EG_N1, EG_N2, EG_NC1, EG_NC2, EG_Value]
-                if EG_index == 1:
-                    EG_array = np.column_stack((EG_array, tmp_array))
+                    V_array = tmp_array
+                    V_index = 1
+            elif I_pattern:
+                I_Np = int(I_pattern.group(2))
+                I_Nn = int(I_pattern.group(3))
+                if I_pattern.group(4):
+                    print(I_pattern.group(4), "Value:\t", I_pattern.group(7))
+                I_value = unit_transform(I_pattern.group(7))
+                if I_pattern.group(10):
+                    print("AC Phase:\t", I_pattern.group(10))
+                    I_value = unit_transform(I_pattern.group(10))
+                tmp_array = [I_Np, I_Nn, I_value]
+                if I_index == 1:
+                    I_array = np.column_stack((I_array, tmp_array))
                 else:
-                    EG_array = tmp_array
-                    EG_index = 1
-            elif FH_pattern:
-                print("\nName:\t", FH_pattern.group(1),
-                      "\nN+:\t", FH_pattern.group(2),
-                      "\nN-:\t", FH_pattern.group(3),
-                      "\nVname:\t", FH_pattern.group(4),
-                      "\nValue:\t", FH_pattern.group(5))
+                    I_array = tmp_array
+                    I_index = 1
+            elif G_pattern:
+                G_Np = int(G_pattern.group(2))
+                G_Nn = int(G_pattern.group(3))
+                G_NC1 = int(G_pattern.group(4))
+                G_NC2 = int(G_pattern.group(5))
+                i = max(i, G_Np, G_Nn, G_NC1, G_NC2)
+                G_Value = unit_transform(G_pattern.group(6))
+                tmp_array = [G_Np, G_Nn, G_NC1, G_NC2, G_Value]
+                if G_index == 1:
+                    G_array = np.column_stack((G_array, tmp_array))
+                else:
+                    G_array = tmp_array
+                    G_index = 1
+            elif F_pattern:
+                print("\nName:\t", F_pattern.group(1),
+                      "\nN+:\t", F_pattern.group(2),
+                      "\nN-:\t", F_pattern.group(3),
+                      "\nVname:\t", F_pattern.group(4),
+                      "\nValue:\t", F_pattern.group(5))
 
         else:
             # command
@@ -155,30 +198,63 @@ while line:
     line_number = line_number + 1
     line = file.readline()
 
-print(RCL_array)
-print(EG_array)
-print(VI_array)
+# print(R_array)
+# print(G_array)
+# print(I_array)
 
 # 运算
 i += 1
 
-R_row_num = RCL_array.shape[0]  # 矩阵的行数
-R_col_num = RCL_array.shape[1]  # 矩阵的列数
+R_row_num = R_array.shape[0]  # 矩阵的行数
+R_col_num = R_array.shape[1]  # 矩阵的列数
 
 a = np.zeros([i, i])  # i*i矩阵
-b = np.zeros([i, 1])
-c = np.zeros([i, 1])
+V = np.zeros([i, 1])
+RHS = np.zeros([i, 1])
 
 for index in range(R_row_num):
-    N1 = RCL_array[index, 0]
-    N2 = RCL_array[index, 1]
-    G_Value = 1 / RCL_array[index, 2]
-    if RCL_index:
-        a[N1, N1] += G_Value
-        a[N2, N2] += G_Value
-        a[N1, N2] -= G_Value
-        a[N2, N1] -= G_Value
+    R_Np = R_array[index, 0]
+    R_Nn = R_array[index, 1]
+    R_Value_G = 1 / R_array[index, 2]
+    if R_index:
+        a[R_Np, R_Np] += R_Value_G
+        a[R_Nn, R_Nn] += R_Value_G
+        a[R_Np, R_Nn] -= R_Value_G
+        a[R_Nn, R_Np] -= R_Value_G
 
-print(a)
+# G_row_num = G_array.shape[0]
+# G_col_num = G_array.shape[1]
+G_row_num = len(G_array)
+# for index in range(G_row_num):
+#    Np = G_array[index, 0]
+#    Nn = G_array[index, 1]
+#    NCp = G_array[index, 2]
+#    NCn = G_array[index, 3]
+#    Value = G_array[index, 4]
+G_Np = G_array[0]
+G_Nn = G_array[1]
+G_NCp = G_array[2]
+G_NCn = G_array[3]
+G_Value = G_array[4]
+if G_index:
+    a[G_Np, G_NCp] += G_Value
+    a[G_Nn, G_NCn] += G_Value
+    a[G_Np, G_NCn] -= G_Value
+    a[G_Nn, G_NCp] -= G_Value
+
+if I_index:
+    I_Np = I_array[0]
+    I_Nn = I_array[1]
+    I_Value = I_array[2]
+    RHS[I_Np] = I_Value
+    RHS[I_Nn] = -I_Value
+
+V = np.linalg.solve(a, RHS)
+V[1] = V[0] - V[1]
+
+print("\nmatrix = ", a)
+print("\nRHS = ", RHS)
+print("\nV1 = ", V[1],
+      "\nV2 = ", V[0])
 
 file.close()
