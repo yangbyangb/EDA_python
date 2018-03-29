@@ -16,7 +16,7 @@ def unit_transform(value):
 
 line = file.readline()
 
-i = 0
+i = 0  # 记录节点个数
 R_index = 0
 C_index = 0
 L_index = 0
@@ -202,13 +202,13 @@ while line:
 # print(G_array)
 # print(I_array)
 
-# 运算
+# Stamp
 i += 1
 
 R_row_num = R_array.shape[0]  # 矩阵的行数
 R_col_num = R_array.shape[1]  # 矩阵的列数
 
-a = np.zeros([i, i])  # i*i矩阵
+a = np.zeros([i, i])  # 初始化i*i矩阵
 V = np.zeros([i, 1])
 RHS = np.zeros([i, 1])
 
@@ -249,12 +249,14 @@ if I_index:
     RHS[I_Np] = I_Value
     RHS[I_Nn] = -I_Value
 
+# 求解
+
 V = np.linalg.solve(a, RHS)
 V[1] = V[0] - V[1]
 
-print("\nmatrix = ", a)
-print("\nRHS = ", RHS)
-print("\nV1 = ", V[1],
-      "\nV2 = ", V[0])
+print("\nmatrix =\n", a)
+print("\nRHS =\n", RHS)
+print("\nV1 = ", "%.2f" % float(V[1]), "V"  # 保留两位小数
+      "\nV2 = ", "%.2f" % float(V[0]), "V")
 
 file.close()
