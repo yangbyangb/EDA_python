@@ -3,56 +3,87 @@ import numpy as np
 
 class Element(object):
 
-    def __init__(self, part_id=None, n1=None, n2=None, is_nonlinear=False, is_symbolic=True, value=None):
-        self.part_id = part_id
+    def __init__(self, name=None, n1=None, n2=None, is_nonlinear=False, is_symbolic=True, value=None):
+        self.name = name
         self.n1 = n1
         self.n2 = n2
         self.value = value
         self.is_nonlinear = is_nonlinear
         self.is_symbolic = is_symbolic
 
-    def __str__(self):
-        return str(self.value)
-
 
 class Resistor(Element):
 
-    def __init__(self, part_id, n1, n2, value):
-        self.part_id = part_id
+    def __init__(self, name, n1, n2, value):
+        self.name = name
         self.n1 = n1
         self.n2 = n2
         self.value = value
-        self.g = 1. / value
+        self.g = 1.0 / value
+
         self.is_nonlinear = False
         self.is_symbolic = True
 
 
 class Capacitor(Element):
 
-    def __init__(self, part_id, n1, n2, value):
-        self.part_id = part_id
-        self.value = value
+    def __init__(self, name, n1, n2, value, ic=None):
+        self.name = name
         self.n1 = n1
         self.n2 = n2
+        self.value = value
+        self.ic = ic
+
         self.is_nonlinear = False
         self.is_symbolic = True
 
 
 class Inductor(Element):
 
-    def  __init__(self, part_id, n1, n2, value):
-        self.value = value
+    def  __init__(self, name, n1, n2, value, ic=None):
+        self.name = name
         self.n1 = n1
         self.n2 = n2
-        self.part_id = part_id
+        self.value = value
+        self.ic = ic
+
         self.is_nonlinear = False
+        self.is_symbolic = True
+
+
+class diode(Element):
+
+    def __init__(self, name, n1, n2, model, area=None, ic=None, off=False):
+        self.name = name
+        self.n1 = n1
+        self.n2 = n2
+        self.model = model
+        self.area = area
+        self.ic = ic
+
+        self.is_nonlinear = True
+        self.is_symbolic = True
+
+
+class mos(Element):
+    def __init__(self, name, nd, ng, ns, nb, type, w, l):
+        self.name = name
+        self.nd = nd
+        self.ng = ng
+        self.ns = ns
+        self.nb = nb
+        self.type = type  # n/p
+        self.w = w
+        self.l = l
+
+        self.is_nonlinear = True
         self.is_symbolic = True
 
 
 class VSrc(Element):
 
-    def __init__(self, part_id, n1, n2, dc_value, ac_value=0):
-        self.part_id = part_id
+    def __init__(self, name, n1, n2, dc_value, ac_value=0):
+        self.name = name
         self.dc_value = dc_value
         self.n1 = n1
         self.n2 = n2
@@ -64,8 +95,8 @@ class VSrc(Element):
 
 class ISrc(Element):
 
-    def __init__(self, part_id, n1, n2, dc_value=None, ac_value=0):
-        self.part_id = part_id
+    def __init__(self, name, n1, n2, dc_value=None, ac_value=0):
+        self.name = name
         self.dc_value = dc_value
         self.abs_ac = np.abs(ac_value) if ac_value else None
         self.arg_ac = np.angle(ac_value) if ac_value else None
@@ -77,24 +108,24 @@ class ISrc(Element):
 
 class ESrc(Element):
 
-    def __init__(self, part_id, n1, n2, value, sn1, sn2):
-        self.part_id = part_id
+    def __init__(self, name, n1, n2, value, nc1, nc2):
+        self.name = name
         self.n1 = n1
         self.n2 = n2
-        self.alpha = value
-        self.sn1 = sn1
-        self.sn2 = sn2
+        self.value = value
+        self.nc1 = nc1
+        self.nc2 = nc2
         self.is_nonlinear = False
         self.is_symbolic = True
 
 
 class FSrc(Element):
 
-    def __init__(self, part_id, n1, n2, value, source_id):
-        self.part_id = part_id
+    def __init__(self, name, n1, n2, value, source_name):
+        self.name = name
         self.n1 = n1
         self.n2 = n2
-        self.source_id = source_id
+        self.source_name = source_name
         self.alpha = value
         self.is_nonlinear = False
         self.is_symbolic = True
@@ -102,24 +133,24 @@ class FSrc(Element):
 
 class GSrc(Element):
 
-    def __init__(self, part_id, n1, n2, value, sn1, sn2):
-        self.part_id = part_id
+    def __init__(self, name, n1, n2, value, nc1, nc2):
+        self.name = name
         self.n1 = n1
         self.n2 = n2
-        self.alpha = value
-        self.sn1 = sn1
-        self.sn2 = sn2
+        self.value = value
+        self.nc1 = nc1
+        self.nc2 = nc2
         self.is_nonlinear = False
         self.is_symbolic = True
 
 
 class HSrc(Element):
 
-    def __init__(self, part_id, n1, n2, value, source_id):
-        self.part_id = part_id
+    def __init__(self, name, n1, n2, value, source_name):
+        self.name = name
         self.n1 = n1
         self.n2 = n2
         self.alpha = value
-        self.source_id = source_id
+        self.source_name = source_name
         self.is_nonlinear = False
         self.is_symbolic = True
