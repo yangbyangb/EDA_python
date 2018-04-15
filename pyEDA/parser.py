@@ -1,40 +1,55 @@
 import re
 
-from . import Circuit
-from . import Element
+from Element import HSrc
+import Circuit
+import Element
 
 
 def parse(filename):
     mycircuit = Circuit.Circuit(title="", filename=filename)
-
     file = open(filename, "r")
-
     lines = []
-
-    commands = []
-
     line_number = 0
+    element = None
+    elements = []
 
-    while file is not None:
+    if file is not None:
         while True:
             line = file.readline()
-            if len(line) == 0:
-                break
             line_number = line_number + 1
             line = line.strip().lower()
             if line_number == 1:
                 mycircuit.title = line
             elif len(line) == 0:
-                continue
+                break
             line = plus_line(file, line)
 
-            if line[0] == ".":
-                line_elements = line.split()
+            if line[0] == '.':
+                line_elements = line.lower().split()
                 if line_elements[0] == ".end":
                     print("End of the netlist file.")
+                elif line_elements[0] == ".op":
+                    mycircuit.op = True
+                elif line_elements[0] == ".dc":
+                    mycircuit.dc = True
+                    mycircuit.dc_start = line_elements[2]
+                    mycircuit.dc_stop = line_elements[3]
+                    mycircuit.dc_point_number = line_elements[4]
+                    mycircuit.dc_source = line_elements[1]
+                    # TODO:mycircuit.dc_type = line_elements[]
+                elif line_elements[0] == ".ac":
+                    mycircuit.ac = True
+                    mycircuit.ac_type = line_elements[1]
+                    mycircuit.ac_start = line_elements[3]
+                    mycircuit.ac_stop = line_elements[4]
+                    mycircuit.ac_point_number = line_elements[2]
+                elif line_elements[0] == ".tran":
+                    mycircuit.tran = True
+                    mycircuit.tran_start = 0
+                    mycircuit.tran_stop = line_elements[2]
+                    mycircuit.tran_step = line_elements[1]
                 else:
-                    commands.append((line, line_number))
-                continue
+                    pass
 
             lines.append((line, line_number))
 
@@ -78,11 +93,12 @@ def parse(filename):
         elif H_pattern:
             element = parse_ccvs(line, mycircuit)
         else:
-            pass
+            element = None
 
-    mycircuit += element
+        if element:
+            elements += [element]
 
-    return mycircuit
+    return mycircuit, elements
 
 
 def parse_resistor(line, mycircuit):
@@ -141,7 +157,7 @@ def parse_diode(line, mycircuit, models=None):
     return [element]
 
 
-def parse_mos(line, mycircuit, models):
+def parse_mos(line, mycircuit, models=None):
 
     line_elements = line.split()
     nd = mycircuit.add_node(line_elements[1])
@@ -204,10 +220,13 @@ def parse_isrc(line, mycircuit):
         r'(^I.) (.*) (.*) ([AD]C)?(=)?( ?)([0-9.]*[FPNUMKGT]?)A?(,?)( ?)([0-9.]*$)?', line, re.I)
     #     1     2 n1 3 n2 4       5   6   7                     8   9   10
 
-    if pattern.group(4).lower() == 'dc':
-        dc_value = pattern.group(7)
-    elif pattern.group(4).lower() == 'ac':
-        ac_value = pattern.group(7)
+    if pattern.group(4):
+        if pattern.group(4).lower() == 'dc':
+            dc_value = unit_transform(pattern.group(7))
+        elif pattern.group(4).lower() == 'ac':
+            ac_value = unit_transform(pattern.group(7))
+    else:
+        dc_value = unit_transform(pattern.group(7))
 
     element = Element.ISrc(name=line_elements[0], n1=n1, n2=n2, dc_value=dc_value, ac_value=ac_value)
 
@@ -219,10 +238,11 @@ def parse_vcvs(line, mycircuit):
 
     n1 = mycircuit.add_node(line_elements[1])
     n2 = mycircuit.add_node(line_elements[2])
-    sn1 = mycircuit.add_node(line_elements[3])
-    sn2 = mycircuit.add_node(line_elements[4])
+    nc1 = mycircuit.add_node(line_elements[3])
+    nc2 = mycircuit.add_node(line_elements[4])
 
-    element = Element.ESrc(name=line_elements[0], n1=n1, n2=n2, sn1=sn1, sn2=sn2, value=unit_transform(line_elements[5]))
+    element = Element.ESrc(name=line_elements[0], n1=n1, n2=n2, nc1=nc1, nc2=nc2,
+                           value=unit_transform(line_elements[5]))
 
     return [element]
 
@@ -233,7 +253,8 @@ def parse_ccvs(line, mycircuit):
     n1 = mycircuit.add_node(line_elements[1])
     n2 = mycircuit.add_node(line_elements[2])
 
-    element = Element.HSrc(name=line_elements[0], n1=n1, n2=n2, source_name=line_elements[3], value=unit_transform(line_elements[4]))
+    element = Element.HSrc(name=line_elements[0], n1=n1, n2=n2, source_name=line_elements[3],
+                           value=unit_transform(line_elements[4]))  # type: HSrc
 
     return [element]
 
@@ -243,10 +264,11 @@ def parse_vccs(line, mycircuit):
 
     n1 = mycircuit.add_node(line_elements[1])
     n2 = mycircuit.add_node(line_elements[2])
-    sn1 = mycircuit.add_node(line_elements[3])
-    sn2 = mycircuit.add_node(line_elements[4])
+    nc1 = mycircuit.add_node(line_elements[3])
+    nc2 = mycircuit.add_node(line_elements[4])
 
-    element = Element.GSrc(name=line_elements[0], n1=n1, n2=n2, sn1=sn1, sn2=sn2, value=unit_transform(line_elements[5]))
+    element = Element.GSrc(name=line_elements[0], n1=n1, n2=n2, nc1=nc1, nc2=nc2,
+                           value=unit_transform(line_elements[5]))
 
     return [element]
 
@@ -257,7 +279,8 @@ def parse_cccs(line, mycircuit):
     n1 = mycircuit.add_node(line_elements[1])
     n2 = mycircuit.add_node(line_elements[2])
 
-    element = Element.FSrc(name=line_elements[0], n1=n1, n2=n2, source_name=line_elements[3], value=unit_transform(line_elements[4]))
+    element = Element.FSrc(name=line_elements[0], n1=n1, n2=n2, source_name=line_elements[3],
+                           value=unit_transform(line_elements[4]))
 
     return [element]
 
@@ -271,21 +294,16 @@ def unit_transform(str_value):
         return float(str_value)
 
 
-class ParseError(Exception):
-
-    pass
-
-
 def plus_line(file, line):
 
     while True:
         last = file.tell()
-        next = file.readline()
-        next = next.strip().lower()
-        if not next:
+        next_line = file.readline()
+        next_line = next_line.strip().lower()
+        if not next_line:
             break
-        elif next[0] == '+':
-            line += ' ' + next[1:]
+        elif next_line[0] == '+':
+            line += ' ' + next_line[1:]
         else:
             file.seek(last)
             break

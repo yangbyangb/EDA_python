@@ -1,4 +1,4 @@
-from . import Element
+import Element
 
 
 class Circuit(list):
@@ -9,6 +9,26 @@ class Circuit(list):
         self.nodes_dict = {}
         self.gnd = '0'
         self.nodes = 0
+
+        self.op = False
+
+        self.dc = False
+        self.dc_start = None
+        self.dc_stop = None
+        self.dc_point_number = None
+        self.dc_source = None
+        self.dc_type = None
+
+        self.ac = False
+        self.ac_type = None
+        self.ac_start = None
+        self.ac_stop = None
+        self.ac_point_number = None
+
+        self.tran = False
+        self.tran_start = None
+        self.tran_stop = None
+        self.tran_step = None
 
     def create_node(self, name):
         index = 0 in self.nodes_dict

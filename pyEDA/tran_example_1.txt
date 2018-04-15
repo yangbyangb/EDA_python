@@ -1,0 +1,7 @@
+* tran example 1
+C1 1 0 1uF
+V 1 0 1V
+.op
+.tran 1ns 1000us
+.plot V(1)
+.end
