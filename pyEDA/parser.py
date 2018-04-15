@@ -10,7 +10,6 @@ def parse(filename):
     file = open(filename, "r")
     lines = []
     line_number = 0
-    element = None
     elements = []
 
     if file is not None:
@@ -32,22 +31,22 @@ def parse(filename):
                     mycircuit.op = True
                 elif line_elements[0] == ".dc":
                     mycircuit.dc = True
+                    mycircuit.dc_source = line_elements[1]
                     mycircuit.dc_start = line_elements[2]
                     mycircuit.dc_stop = line_elements[3]
                     mycircuit.dc_point_number = line_elements[4]
-                    mycircuit.dc_source = line_elements[1]
                     # TODO:mycircuit.dc_type = line_elements[]
                 elif line_elements[0] == ".ac":
                     mycircuit.ac = True
                     mycircuit.ac_type = line_elements[1]
+                    mycircuit.ac_point_number = line_elements[2]
                     mycircuit.ac_start = line_elements[3]
                     mycircuit.ac_stop = line_elements[4]
-                    mycircuit.ac_point_number = line_elements[2]
                 elif line_elements[0] == ".tran":
                     mycircuit.tran = True
                     mycircuit.tran_start = 0
-                    mycircuit.tran_stop = line_elements[2]
                     mycircuit.tran_step = line_elements[1]
+                    mycircuit.tran_stop = line_elements[2]
                 else:
                     pass
 
@@ -55,42 +54,45 @@ def parse(filename):
 
     for line, line_number in lines:
 
-        R_pattern = re.match(r'^R.*', line, re.I)
-        C_pattern = re.match(r'^C.*', line, re.I)
-        L_pattern = re.match(r'^L.*', line, re.I)
+        r_pattern = re.match(r'^R.*', line, re.I)
+        c_pattern = re.match(r'^C.*', line, re.I)
+        l_pattern = re.match(r'^L.*', line, re.I)
 
-        D_pattern = re.match(r'^D.*', line, re.I)
-        MOS_pattern = re.match(r'^M.*', line, re.I)
+        d_pattern = re.match(r'^D.*', line, re.I)
+        mos_pattern = re.match(r'^M.*', line, re.I)
 
-        V_pattern = re.match(r'^V.*', line, re.I)
-        I_pattern = re.match(r'^I.*', line, re.I)
+        v_pattern = re.match(r'^V.*', line, re.I)
+        v_pulse_pattern = re.match(r'(^V.*) (.*) (.*) PULSE (.*) (.*) (.*) (.*) (.*) (.*) (.*)', line, re.I)
+        i_pattern = re.match(r'^I.*', line, re.I)
 
-        E_pattern = re.match(r'^E.', line, re.I)
-        F_pattern = re.match(r'^F.', line, re.I)
-        G_pattern = re.match(r'^G.', line, re.I)
-        H_pattern = re.match(r'^H.', line, re.I)
+        e_pattern = re.match(r'^E.', line, re.I)
+        f_pattern = re.match(r'^F.', line, re.I)
+        g_pattern = re.match(r'^G.', line, re.I)
+        h_pattern = re.match(r'^H.', line, re.I)
 
-        if R_pattern:
+        if r_pattern:
             element = parse_resistor(line, mycircuit)
-        elif C_pattern:
+        elif c_pattern:
             element = parse_capacitor(line, mycircuit)
-        elif L_pattern:
+        elif l_pattern:
             element = parse_inductor(line, mycircuit)
-        elif D_pattern:
+        elif d_pattern:
             element = parse_diode(line, mycircuit)
-        elif MOS_pattern:
+        elif mos_pattern:
             element = parse_mos(line, mycircuit)
-        elif V_pattern:
+        elif v_pattern:
             element = parse_vsrc(line, mycircuit)
-        elif I_pattern:
+        elif v_pulse_pattern:
+            element = parse_v_pulse_src(line, mycircuit)
+        elif i_pattern:
             element = parse_isrc(line, mycircuit)
-        elif E_pattern:
+        elif e_pattern:
             element = parse_vcvs(line, mycircuit)
-        elif F_pattern:
+        elif f_pattern:
             element = parse_cccs(line, mycircuit)
-        elif G_pattern:
+        elif g_pattern:
             element = parse_vccs(line, mycircuit)
-        elif H_pattern:
+        elif h_pattern:
             element = parse_ccvs(line, mycircuit)
         else:
             element = None
@@ -205,6 +207,29 @@ def parse_vsrc(line, mycircuit):
 
     element = Element.VSrc(name=line_elements[0], n1=n1, n2=n2,
                            dc_value=dc_value, ac_value=ac_value)
+
+    return [element]
+
+
+def parse_v_pulse_src(line, mycircuit):
+
+    pattern = re.match(r'(^V.*) (.*) (.*) PULSE (.*) (.*) (.*)S? (.*)S? (.*)S? (.*)S? (.*)S?', line, re.I)
+                    #    1      2    3          4    5    6      7      8      9      10
+
+    name = pattern.group(1)
+    n1 = mycircuit.add_node(pattern.group(2))
+    n2 = mycircuit.add_node(pattern.group(3))
+    voltage_low = unit_transform(pattern.group(4))
+    voltage_high = unit_transform(pattern.group(5))
+    delay = unit_transform(pattern.group(6))
+    rise = unit_transform(pattern.group(7))
+    fall = unit_transform(pattern.group(8))
+    width = unit_transform(pattern.group(9))
+    period = unit_transform(pattern.group(10))
+
+    element = Element.VPulseSrc(name=name, n1=n1, n2=n2,
+                                voltage_low=voltage_low, voltage_high=voltage_high,
+                                delay=delay, rise=rise, fall=fall, width=width, period=period)
 
     return [element]
 

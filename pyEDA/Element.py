@@ -3,11 +3,17 @@ import numpy as np
 
 class Element(object):
 
-    def __init__(self, name=None, n1=None, n2=None, is_nonlinear=False, is_symbolic=True, value=None):
+    def __init__(self, name=None, n1=None, n2=None,
+                 is_nonlinear=False, is_symbolic=True,
+                 value=None, branch_number4tran=None, is_v_pulse=False):
         self.name = name
         self.n1 = n1
         self.n2 = n2
         self.value = value
+
+        self.branch_number4tran = branch_number4tran
+        self.is_v_pulse = is_v_pulse
+
         self.is_nonlinear = is_nonlinear
         self.is_symbolic = is_symbolic
 
@@ -40,7 +46,7 @@ class Capacitor(Element):
 
 class Inductor(Element):
 
-    def  __init__(self, name, n1, n2, value, ic=None):
+    def __init__(self, name, n1, n2, value, ic=None):
         self.name = name
         self.n1 = n1
         self.n2 = n2
@@ -91,6 +97,22 @@ class VSrc(Element):
         self.arg_ac = np.angle(ac_value) if ac_value else None
         self.is_nonlinear = False
         self.is_symbolic = True
+        self.is_v_pulse = True
+
+
+class VPulseSrc(Element):
+
+    def __init__(self, name, n1, n2, voltage_low, voltage_high, delay, rise, fall, width, period):
+        self.name = name
+        self.n1 = n1
+        self.n2 = n2
+        self.voltage_low = voltage_low
+        self.voltage_high = voltage_high
+        self.delay = delay
+        self.rise = rise
+        self.fall = fall
+        self.width = width
+        self.period = period
 
 
 class ISrc(Element):

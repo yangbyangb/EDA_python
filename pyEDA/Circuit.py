@@ -95,6 +95,14 @@ class Circuit(list):
         element = Element.VSrc(name=name, n1=n1, n2=n2, dc_value=dc_value, ac_value=ac_value)
         self.append(element)
 
+    def add_v_pulse_src(self, name, n1, n2, voltage_low, voltage_high, delay, rise, fall, width, period):
+        n1 = self.add_node(n1)
+        n2 = self.add_node(n2)
+        element = Element.VPulseSrc(name=name, n1=n1, n2=n2,
+                                    voltage_low=voltage_low, voltage_high=voltage_high,
+                                    delay=delay, rise=rise, fall=fall, width=width, period=period)
+        self.append(element)
+
     def add_isrc(self, name, n1, n2, dc_value, ac_value=0):
         n1 = self.add_node(n1)
         n2 = self.add_node(n2)

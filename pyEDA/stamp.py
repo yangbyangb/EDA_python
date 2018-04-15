@@ -2,25 +2,50 @@ import numpy as np
 import sympy
 
 
-def stamp(mycircuit, elements, s=None, ac=False):
+def stamp(mycircuit, elements,
+          dc_sweep_source=None, dc_sweep_v_value=None,
+          ac=False, s=None,
+          tran=False, tran_stamp_value=None, v_t_minus_h=None, i_t_minus_h=None):
+
     node_number = mycircuit.get_nodes_number()
 
     mna = np.zeros([node_number, node_number], dtype=complex)
     rhs = np.zeros([node_number, 1], dtype=complex)
 
+    h = 1e-12
+
     for element in elements:
+        tran_branch_index = 0
         element = element[0]
         name = element.name.lower()
         if name:
             if name[0] == 'r':  # resistor
                 mna = stamp_r_mna(mna, element)
             elif name[0] == 'c':  # capacitor
-                mna = stamp_c_mna(mna, element, s, ac)
+                tran_branch_index += 1
+                mna = stamp_c_mna(mna, element, s, ac, tran)
+                if tran:
+                    v = (v_t_minus_h[element.n1] - v_t_minus_h[element.n2])
+                    rhs = stamp_rhs(rhs=rhs, element=element,
+                                    tran_stamp_value=(element.value / h * v))
             elif name[0] == 'l':  # inductor
-                mna = stamp_l_mna(mna, element, s, ac)
+                tran_branch_index += 1
+                element.branch_number4tran = tran_branch_index
+                mna = stamp_l_mna(mna, element, s, ac, tran)
+                if tran:
+                    rhs = stamp_rhs(rhs=rhs, element=element,
+                                    tran_stamp_value=(-element.value / h * i_t_minus_h[element.branch_number4tran]))
             elif name[0] == 'v':  # voltage source
                 mna = stamp_vsrc_mna(mna, element)
-                rhs = stamp_rhs(rhs, element)
+                if dc_sweep_source:
+                    if name == dc_sweep_source:
+                        rhs = stamp_rhs(rhs, element, dc_sweep_v_value=dc_sweep_v_value)
+                    else:
+                        rhs = stamp_rhs(rhs, element)
+                elif tran_stamp_value:
+                    rhs = stamp_rhs(rhs, element, tran_stamp_value=tran_stamp_value)
+                else:
+                    rhs = stamp_rhs(rhs, element)
             elif name[0] == 'i':  # current source
                 rhs = stamp_isrc_rhs(rhs, element)
             elif name[0] == 'd':  # diode
@@ -52,23 +77,43 @@ def stamp_r_mna(mna, element):
     return mna
 
 
-def stamp_c_mna(mna, element, s=None, ac=False):
+def stamp_c_mna(mna, element, s=None, ac=False, tran=False):
     if ac:
         mna[element.n1, element.n1] += s * element.value
         mna[element.n2, element.n2] += s * element.value
         mna[element.n1, element.n2] -= s * element.value
         mna[element.n2, element.n1] -= s * element.value
+    elif tran:
+        h = 1e-12
+
+        index = mna.shape[0]
+        mna = _add_row_or_column(mna, add_a_row=True, add_a_column=True)
+        mna[element.n1, index] = +1
+        mna[element.n2, index] = -1
+        mna[index, element.n1] = + element.value / h
+        mna[index, element.n2] = - element.value / h
+        mna[index, index] = -1
+
     else:
         pass
 
     return mna
 
 
-def stamp_l_mna(mna, element, s=None, ac=False):
+def stamp_l_mna(mna, element, s=None, ac=False, tran=False):
     mna = stamp_vsrc_mna(mna, element)
     index = mna.shape[0] - 1
     if ac:
         mna[index, index] = -s * element.value
+
+    elif tran:
+        h = 1e-12
+        mna[element.n1, index] = +1
+        mna[element.n2, index] = -1
+        mna[index, element.n1] = +1
+        mna[index, element.n2] = -1
+        mna[index, index] = - element.value / h
+
     else:
         pass
     return mna
@@ -127,9 +172,15 @@ def stamp_mos_mna(mna, element):
     return mna
 
 
-def stamp_rhs(rhs, element):
+def stamp_rhs(rhs, element, dc_sweep_v_value=None, tran_stamp_value=None):
     rhs = _add_row_or_column(rhs, add_a_row=True, add_a_column=False)
-    rhs[rhs.shape[1] - 1] = element.value
+
+    if dc_sweep_v_value:
+        rhs[rhs.shape[1] - 1] = dc_sweep_v_value
+    elif tran_stamp_value:
+        rhs[rhs.shape[1] - 1] = tran_stamp_value
+    else:
+        rhs[rhs.shape[1] - 1] = element.value
     return rhs
 
 
