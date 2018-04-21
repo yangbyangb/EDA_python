@@ -30,7 +30,7 @@ def simulate():
         x = np.linspace(mycircuit.dc_start, mycircuit.dc_stop, mycircuit.dc_point_number, endpoint=True)
         rslt_num = len(dc_result)
         y = np.zeros(len(x))
-        for i in range(len(dc_result[0])):
+        for i in range(len(dc_result[0]) - 1):
             for j in range(rslt_num):
                 y[j] = dc_result[j][i][0]
 
