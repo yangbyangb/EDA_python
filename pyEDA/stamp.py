@@ -176,11 +176,19 @@ def stamp_rhs(rhs, element, dc_sweep_v_value=None, tran_stamp_value=None):
     rhs = _add_row_or_column(rhs, add_a_row=True, add_a_column=False)
 
     if dc_sweep_v_value:
+<<<<<<< HEAD
         rhs[rhs.shape[0] - 1] = dc_sweep_v_value
     elif tran_stamp_value:
         rhs[rhs.shape[0] - 1] = tran_stamp_value
     else:
         rhs[rhs.shape[0] - 1] = element.dc_value
+=======
+        rhs[rhs.shape[1] - 1] = dc_sweep_v_value
+    elif tran_stamp_value:
+        rhs[rhs.shape[1] - 1] = tran_stamp_value
+    else:
+        rhs[rhs.shape[1] - 1] = element.dc_value
+>>>>>>> origin/master
     return rhs
 
 
