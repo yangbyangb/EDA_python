@@ -1,0 +1,20 @@
+* TEST CIRCUIT
+* comment
+.PARAM nWidth= 3u
+VS 1 0 DC=5mV
+I1 0 1 5A
+V1 1 2 AC=10V,90
+V2 2 3 AC 5 180
+V3 0 2 AC=1
+R1 1 2 1K
+C1 2 3 2p
+C2 1 3 1pF
+L1 3 0 3m
+L2 0 2 1mH
+M1 out in 0 0 NMOS L=2u W=10u
+M2 out in vdd vdd PMOS W=10u L=2u
+.DC VS 2 6 1
+.AC LIN 100 1 100HZ
+.TRAN 0.1MS 100MS
+*.PRINT DC V(2,3) V(2) I(R2)
+.END
