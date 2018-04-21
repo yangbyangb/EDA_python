@@ -180,15 +180,15 @@ def stamp_rhs(rhs, element, dc_sweep_v_value=None, tran_stamp_value=None):
     elif tran_stamp_value:
         rhs[rhs.shape[1] - 1] = tran_stamp_value
     else:
-        rhs[rhs.shape[1] - 1] = element.value
+        rhs[rhs.shape[1] - 1] = element.dc_value
     return rhs
 
 
 def _add_row_or_column(matrix, add_a_row=False, add_a_column=False):
     if add_a_row:
-        row = sympy.zeros(1, matrix.shape[1])
-        matrix = matrix.row_insert(matrix.shape[0], row)
+        row = np.zeros((1, matrix.shape[1]))
+        matrix = np.row_stack((matrix, row))
     if add_a_column:
-        column = sympy.zeros(matrix.shape[0], 1)
-        matrix = matrix.col_insert(matrix.shape[1], column)
+        column = np.zeros((matrix.shape[0], 1))
+        matrix = np.column_stack((matrix, column))
     return matrix

@@ -12,9 +12,12 @@ def op(mna, rhs):
 def dc_sweep(mycircuit, elements, start, stop, point_number, source, sweep_type='LIN'):
     sweep_v = None
     result = []
-    if sweep_type.upper() == 'LOG':
-        sweep_v = log_sweep(start=start, stop=stop, point_number=point_number)
-    elif sweep_type.upper() == 'LIN':
+    if sweep_type:
+        if sweep_type.upper() == 'LOG':
+            sweep_v = log_sweep(start=start, stop=stop, point_number=point_number)
+        elif sweep_type.upper() == 'LIN':
+            sweep_v = lin_sweep(start=start, stop=stop, point_number=point_number)
+    else:
         sweep_v = lin_sweep(start=start, stop=stop, point_number=point_number)
 
     for dc_sweep_v_value in sweep_v:
@@ -56,7 +59,7 @@ def tran(mycircuit, elements, start, stop, step, rhs):
             v_pulse_tran(t, element)
 
     while True:
-        if t == 0:
+        if t == 0:  # ???
             mna, rhs = stamp.stamp(mycircuit=mycircuit, elements=elements)
             previous_result = op(mna, rhs)
             if t >= start:
