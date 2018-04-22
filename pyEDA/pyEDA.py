@@ -10,7 +10,7 @@ import analysis
 
 
 def simulate():
-    mycircuit, elements = parser.parse('ac_test.sp')
+    mycircuit, elements = parser.parse('diode_test.sp')
 
     op_result = None
     dc_result = None
@@ -32,7 +32,7 @@ def simulate():
         y = np.zeros(len(x))
         for i in range(len(dc_result[0]) - 1):
             for j in range(rslt_num):
-                y[j] = dc_result[j][i][0]
+                y[j] = dc_result[j][i]
 
             plt.plot(x, y, linewidth=1.0, linestyle="-")
             plt.xlim(mycircuit.dc_start, mycircuit.dc_stop)
@@ -42,7 +42,7 @@ def simulate():
             plt.yticks(np.linspace(ymax, ymin, 5, endpoint=True))
             plt.xlabel('x')
             plt.ylabel('y')
-            plt.title('DC sweep result\n', fontsize=12)
+            plt.title('Node %d DC sweep result\n' % (i+1), fontsize=12)
 
             ax = plt.gca()
             ax.spines['right'].set_color('none')
@@ -52,7 +52,7 @@ def simulate():
             ax.yaxis.set_ticks_position('left')
             ax.spines['left'].set_position(('data', 0))
 
-            plt.savefig("DC sweep result.png", dpi=288)
+            plt.savefig("Node %d DC sweep result.png" % (i+1), dpi=288)
             plt.show()
 
     if mycircuit.ac:
@@ -82,37 +82,41 @@ def simulate():
             plt.yticks(np.linspace(ymax, ymin, 5, endpoint=True))
             plt.xlabel('x')
             plt.ylabel('y')
-            plt.title('AC result (/V)\n', fontsize=12)
+            plt.title('Node %d AC result (/V)\n' % (i+1), fontsize=12)
 
-            plt.savefig("AC result.png", dpi=288)
+            plt.savefig("Node %d AC result.png" % (i+1), dpi=288)
             plt.show()
 
     if mycircuit.tran:
         t, tran_result = analysis.tran(mycircuit=mycircuit, elements=elements,
                                        start=mycircuit.tran_start, stop=mycircuit.tran_stop, step=mycircuit.tran_step)
 
-        y = tran_result
+        rslt_num = len(tran_result)
+        y = np.zeros(len(t))
+        for i in range(len(tran_result[0]) - 1):
+            for j in range(rslt_num):
+                y[j] = np.real(tran_result[j][i][0])
 
-        plt.plot(t, y, linewidth=1.0, linestyle="-")
-        plt.xlim(mycircuit.dc_start, mycircuit.dc_stop)
-        plt.xticks(np.linspace(mycircuit.dc_start, mycircuit.dc_stop, mycircuit.dc_point_number / 10, endpoint=True))
-        ymax = max(y, key=lambda a: a)
-        ymin = min(y, key=lambda a: a)
-        plt.yticks(np.linspace(ymax, ymin, 5, endpoint=True))
-        plt.xlabel('x')
-        plt.ylabel('y')
-        plt.title('TRAN result\n', fontsize=12)
+            plt.plot(t, y, linewidth=1.0, linestyle="-")
+            plt.xlim(mycircuit.tran_start, mycircuit.tran_stop)
+            plt.xticks(np.linspace(mycircuit.tran_start, mycircuit.tran_stop, 5, endpoint=True))
+            ymax = max(y, key=lambda a: a)
+            ymin = min(y, key=lambda a: a)
+            plt.yticks(np.linspace(ymax, ymin, 5, endpoint=True))
+            plt.xlabel('x')
+            plt.ylabel('y')
+            plt.title('Node %d TRAN result\n' % (i+1), fontsize=12)
 
-        ax = plt.gca()
-        ax.spines['right'].set_color('none')
-        ax.spines['top'].set_color('none')
-        ax.xaxis.set_ticks_position('bottom')
-        ax.spines['bottom'].set_position(('data', 0))
-        ax.yaxis.set_ticks_position('left')
-        ax.spines['left'].set_position(('data', 0))
+            ax = plt.gca()
+            ax.spines['right'].set_color('none')
+            ax.spines['top'].set_color('none')
+            ax.xaxis.set_ticks_position('bottom')
+            ax.spines['bottom'].set_position(('data', 0))
+            ax.yaxis.set_ticks_position('left')
+            ax.spines['left'].set_position(('data', 0))
 
-        plt.savefig("TRAN result.png", dpi=288)
-        plt.show()
+            plt.savefig("Node %d TRAN result.png" % (i+1), dpi=288)
+            plt.show()
 
 
 def get_complex_magnitude(cmplx):

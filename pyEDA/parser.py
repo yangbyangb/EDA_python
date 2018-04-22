@@ -45,10 +45,11 @@ def parse(filename):
                     mycircuit.ac_start = unit_transform(pattern.group(3))
                     mycircuit.ac_stop = unit_transform(pattern.group(5))
                 elif line_elements[0] == ".tran":
+                    pattern = re.match(r'.tran ([0-9.]*[FPNUMKGT]?)(s)? ([0-9.]*[FPNUMKGT]?)(s)?', line, re.I)
                     mycircuit.tran = True
                     mycircuit.tran_start = 0
-                    mycircuit.tran_step = unit_transform(line_elements[1])
-                    mycircuit.tran_stop = unit_transform(line_elements[2])
+                    mycircuit.tran_step = unit_transform(pattern.group(1))
+                    mycircuit.tran_stop = unit_transform(pattern.group(3))
                 else:
                     pass
 
@@ -81,8 +82,10 @@ def parse(filename):
                 element = parse_inductor(line, mycircuit)
             elif d_pattern:
                 element = parse_diode(line, mycircuit)
+                mycircuit.has_nonlinear = True
             elif mos_pattern:
                 element = parse_mos(line, mycircuit)
+                mycircuit.has_nonlinear = True
             elif v_pattern:
                 element = parse_vsrc(line, mycircuit)
             elif v_pulse_pattern:
@@ -122,7 +125,7 @@ def parse_resistor(line, mycircuit):
 
 def parse_capacitor(line, mycircuit):
 
-    line_elements = line.split()
+    line_elements = line.lower().replace('f', '').split()
 
     n1 = mycircuit.add_node(line_elements[1])
     n2 = mycircuit.add_node(line_elements[2])
@@ -142,7 +145,7 @@ def parse_capacitor(line, mycircuit):
 
 def parse_inductor(line, mycircuit):
 
-    line_elements = line.split()
+    line_elements = line.lower().replace('h', '').split()
 
     n1 = mycircuit.add_node(line_elements[1])
     n2 = mycircuit.add_node(line_elements[2])
@@ -167,7 +170,9 @@ def parse_diode(line, mycircuit, models=None):
 
     model_label = line_elements[3]
 
-    element = Element.diode(name=line_elements[0], n1=n1, n2=n2, model=models[model_label])
+    area = line_elements[4]
+
+    element = Element.diode(name=line_elements[0], n1=n1, n2=n2, model=model_label, area=area)
 
     return [element]
 

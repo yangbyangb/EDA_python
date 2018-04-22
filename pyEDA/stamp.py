@@ -1,12 +1,13 @@
 import numpy as np
-import cmath
+import math
 import sympy
 
 
 def stamp(mycircuit, elements,
+          ID=0, VD=0,
           dc_sweep_source=None, dc_sweep_v_value=None,
           ac=False, s=None,
-          tran=False, tran_stamp_value=None, v_t_minus_h=None, i_t_minus_h=None):
+          tran=False, vpulse_cur_value=None, t=0, v_t_minus_h=None, i_t_minus_h=None):
 
     node_number = mycircuit.get_nodes_number()
 
@@ -26,7 +27,11 @@ def stamp(mycircuit, elements,
                 tran_branch_index += 1
                 mna = stamp_c_mna(mna, element, s, ac, tran)
                 if tran:
-                    v = (v_t_minus_h[element.n1] - v_t_minus_h[element.n2])
+                    if t == 0:
+                        if element.ic:
+                            v = element.ic
+                    elif t <= mycircuit.tran_stop:
+                        v = (v_t_minus_h[element.n1] - v_t_minus_h[element.n2])
                     rhs = stamp_rhs(rhs=rhs, element=element,
                                     tran_stamp_value=(element.value / h * v))
             elif name[0] == 'l':  # inductor
@@ -36,8 +41,13 @@ def stamp(mycircuit, elements,
                 if ac:
                     rhs = _add_row_or_column(rhs, add_a_row=True, add_a_column=False)
                 if tran:
+                    if t == 0:
+                        if element.ic:
+                            i = element.ic
+                    elif t <= mycircuit.tran_stop:
+                        i = i_t_minus_h[element.branch_number4tran]
                     rhs = stamp_rhs(rhs=rhs, element=element,
-                                    tran_stamp_value=(-element.value / h * i_t_minus_h[element.branch_number4tran]))
+                                    tran_stamp_value=(-element.value / h * i))
             elif name[0] == 'v':  # voltage source
                 mna = stamp_vsrc_mna(mna, element)
                 if dc_sweep_source:
@@ -45,8 +55,8 @@ def stamp(mycircuit, elements,
                         rhs = stamp_rhs(rhs, element, dc_sweep_v_value=dc_sweep_v_value)
                     else:
                         rhs = stamp_rhs(rhs, element)
-                elif tran_stamp_value:
-                    rhs = stamp_rhs(rhs, element, tran_stamp_value=tran_stamp_value)
+                elif vpulse_cur_value:
+                    rhs = stamp_rhs(rhs, element, tran_stamp_value=vpulse_cur_value)
                 elif mycircuit.ac:
                     rhs = stamp_rhs(rhs, element, s=s)
                 else:
@@ -54,9 +64,11 @@ def stamp(mycircuit, elements,
             elif name[0] == 'i':  # current source
                 rhs = stamp_isrc_rhs(rhs, element)
             elif name[0] == 'd':  # diode
-                mna = stamp_d_mna(mna, element)
+                mna = stamp_d_mna(mna, element, VD)
+                rhs = stamp_d_rhs(rhs, element, ID, VD)
             elif name[0] == 'm':  # MOSFET
                 mna = stamp_mos_mna(mna, element)
+                rhs = stamp_mos_rhs(rhs, element)
             elif name[0] == 'e':  # vcvs
                 mna = stamp_vcvs_mna(mna, element)
                 rhs = stamp_rhs(rhs, element)
@@ -166,15 +178,34 @@ def stamp_ccvs_mna(mna, element):  # h
     return mna
 
 
-def stamp_d_mna(mna, element):
-
-
+def stamp_d_mna(mna, element, VD):
+    G = 40 * math.exp(40 * VD)
+    mna[element.n1, element.n1] += G
+    mna[element.n2, element.n2] += G
+    mna[element.n1, element.n2] -= G
+    mna[element.n2, element.n1] -= G
     return mna
+
+
+def stamp_d_rhs(rhs, element, ID, VD):
+    G = 40 * math.exp(40 * VD)
+    I = ID - G * VD
+
+    rhs[element.n1] += I
+    rhs[element.n2] -= I
+    return rhs
 
 
 def stamp_mos_mna(mna, element):
 
+
     return mna
+
+
+def stamp_mos_rhs(rhs, element):
+
+
+    return rhs
 
 
 def stamp_rhs(rhs, element, dc_sweep_v_value=None, tran_stamp_value=None, s=None):

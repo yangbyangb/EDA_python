@@ -27,6 +27,7 @@ class Resistor(Element):
         self.value = value
         self.g = 1.0 / value
 
+        self.is_v_pulse = False
         self.is_nonlinear = False
         self.is_symbolic = True
 
@@ -40,6 +41,7 @@ class Capacitor(Element):
         self.value = value
         self.ic = ic
 
+        self.is_v_pulse = False
         self.is_nonlinear = False
         self.is_symbolic = True
 
@@ -53,6 +55,7 @@ class Inductor(Element):
         self.value = value
         self.ic = ic
 
+        self.is_v_pulse = False
         self.is_nonlinear = False
         self.is_symbolic = True
 
@@ -67,6 +70,7 @@ class diode(Element):
         self.area = area
         self.ic = ic
 
+        self.is_v_pulse = False
         self.is_nonlinear = True
         self.is_symbolic = True
 
@@ -81,7 +85,7 @@ class mos(Element):
         self.type = type  # n/p
         self.w = w
         self.l = l
-
+        self.is_v_pulse = False
         self.is_nonlinear = True
         self.is_symbolic = True
 
@@ -97,7 +101,7 @@ class VSrc(Element):
         self.arg_ac = arg_ac
         self.is_nonlinear = False
         self.is_symbolic = True
-        self.is_v_pulse = True
+        self.is_v_pulse = False
 
 
 class VPulseSrc(Element):
@@ -113,6 +117,7 @@ class VPulseSrc(Element):
         self.fall = fall
         self.width = width
         self.period = period
+        self.is_v_pulse = True
 
 
 class ISrc(Element):
@@ -126,6 +131,7 @@ class ISrc(Element):
         self.n2 = n2
         self.is_nonlinear = False
         self.is_symbolic = True
+        self.is_v_pulse = False
 
 
 class ESrc(Element):
@@ -139,6 +145,7 @@ class ESrc(Element):
         self.nc2 = nc2
         self.is_nonlinear = False
         self.is_symbolic = True
+        self.is_v_pulse = False
 
 
 class FSrc(Element):
@@ -151,6 +158,7 @@ class FSrc(Element):
         self.alpha = value
         self.is_nonlinear = False
         self.is_symbolic = True
+        self.is_v_pulse = False
 
 
 class GSrc(Element):
@@ -164,6 +172,7 @@ class GSrc(Element):
         self.nc2 = nc2
         self.is_nonlinear = False
         self.is_symbolic = True
+        self.is_v_pulse = False
 
 
 class HSrc(Element):
@@ -176,3 +185,4 @@ class HSrc(Element):
         self.source_name = source_name
         self.is_nonlinear = False
         self.is_symbolic = True
+        self.is_v_pulse = False

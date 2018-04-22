@@ -30,6 +30,8 @@ class Circuit(list):
         self.tran_stop = None
         self.tran_step = None
 
+        self.has_nonlinear = False
+
     def create_node(self, name):
         index = 0 in self.nodes_dict
         if name not in self.nodes_dict:
