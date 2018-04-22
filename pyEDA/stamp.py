@@ -1,4 +1,5 @@
 import numpy as np
+import cmath
 import sympy
 
 
@@ -32,6 +33,8 @@ def stamp(mycircuit, elements,
                 tran_branch_index += 1
                 element.branch_number4tran = tran_branch_index
                 mna = stamp_l_mna(mna, element, s, ac, tran)
+                if ac:
+                    rhs = _add_row_or_column(rhs, add_a_row=True, add_a_column=False)
                 if tran:
                     rhs = stamp_rhs(rhs=rhs, element=element,
                                     tran_stamp_value=(-element.value / h * i_t_minus_h[element.branch_number4tran]))
@@ -44,6 +47,8 @@ def stamp(mycircuit, elements,
                         rhs = stamp_rhs(rhs, element)
                 elif tran_stamp_value:
                     rhs = stamp_rhs(rhs, element, tran_stamp_value=tran_stamp_value)
+                elif mycircuit.ac:
+                    rhs = stamp_rhs(rhs, element, s=s)
                 else:
                     rhs = stamp_rhs(rhs, element)
             elif name[0] == 'i':  # current source
@@ -62,7 +67,7 @@ def stamp(mycircuit, elements,
             elif name[0] == 'h':  # ccvs  # TODO: complete this
                 mna = stamp_ccvs_mna(mna, element)
 
-    # TODO: delete node 0 (gnd) in mna & rhs
+    # delete node 0 (gnd) in mna & rhs
     mna = np.delete(mna, 0, 0)
     mna = np.delete(mna, 0, 1)
     rhs = np.delete(rhs, 0, 0)
@@ -172,23 +177,18 @@ def stamp_mos_mna(mna, element):
     return mna
 
 
-def stamp_rhs(rhs, element, dc_sweep_v_value=None, tran_stamp_value=None):
+def stamp_rhs(rhs, element, dc_sweep_v_value=None, tran_stamp_value=None, s=None):
     rhs = _add_row_or_column(rhs, add_a_row=True, add_a_column=False)
 
     if dc_sweep_v_value:
-<<<<<<< HEAD
         rhs[rhs.shape[0] - 1] = dc_sweep_v_value
     elif tran_stamp_value:
         rhs[rhs.shape[0] - 1] = tran_stamp_value
     else:
-        rhs[rhs.shape[0] - 1] = element.dc_value
-=======
-        rhs[rhs.shape[1] - 1] = dc_sweep_v_value
-    elif tran_stamp_value:
-        rhs[rhs.shape[1] - 1] = tran_stamp_value
-    else:
-        rhs[rhs.shape[1] - 1] = element.dc_value
->>>>>>> origin/master
+        if element.dc_value:
+            rhs[rhs.shape[0] - 1] = element.dc_value
+        elif element.abs_ac:
+            rhs[rhs.shape[0] - 1] = element.abs_ac
     return rhs
 
 

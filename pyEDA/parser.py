@@ -38,11 +38,12 @@ def parse(filename):
                         (mycircuit.dc_stop - mycircuit.dc_start) / unit_transform(line_elements[4])
                     # TODO:mycircuit.dc_type = line_elements[]
                 elif line_elements[0] == ".ac":
+                    pattern = re.match(r'.AC (.*) (.*) ([0-9.]*[FPNUMKGT]?)(Hz)? ([0-9.]*[FPNUMKGT]?)(Hz)?', line, re.I)
                     mycircuit.ac = True
-                    mycircuit.ac_type = line_elements[1]
-                    mycircuit.ac_point_number = unit_transform(line_elements[2])
-                    mycircuit.ac_start = unit_transform(line_elements[3])
-                    mycircuit.ac_stop = unit_transform(line_elements[4])
+                    mycircuit.ac_type = pattern.group(1)
+                    mycircuit.ac_point_number = int(unit_transform(pattern.group(2)))
+                    mycircuit.ac_start = unit_transform(pattern.group(3))
+                    mycircuit.ac_stop = unit_transform(pattern.group(5))
                 elif line_elements[0] == ".tran":
                     mycircuit.tran = True
                     mycircuit.tran_start = 0
@@ -128,9 +129,11 @@ def parse_capacitor(line, mycircuit):
 
     value = unit_transform(line_elements[3])
 
+    pattern = re.match(r'(^C.*) (.*) (.*) ([0-9.]*[FPNUMKGT]?)F?', line, re.I)
+
     ic = None
-    if line_elements[4]:
-        ic = line_elements[4]
+    if pattern.group(4):
+        ic = unit_transform(pattern.group(4))
 
     element = Element.Capacitor(name=line_elements[0], n1=n1, n2=n2, value=value, ic=ic)
 
@@ -147,7 +150,7 @@ def parse_inductor(line, mycircuit):
     value = unit_transform(line_elements[3])
 
     ic = None
-    if line_elements[4]:
+    if len(line_elements) > 4:
         ic = line_elements[4]
 
     element = Element.Inductor(name=line_elements[0], n1=n1, n2=n2, value=value, ic=ic)
@@ -202,21 +205,27 @@ def parse_mos(line, mycircuit, models=None):
 def parse_vsrc(line, mycircuit):
     line_elements = line.split()
     dc_value = None
-    ac_value = None
+    abs_ac = None
+    arg_ac = None
 
     pattern = re.match(
-        r'(^V.*) (.*) (.*) ([AD]C)?(=)?( ?)([0-9.]*[FPNUMKGT]?)V?(,?)( ?)([0-9.]*$)?', line, re.I)
-    #     1      2 n1 3 n2 4       5   6   7                     8   9   10
+        r'(^V.*) (.*) (.*) (.*)?', line, re.I)
+
     n1 = mycircuit.add_node(line_elements[1])
     n2 = mycircuit.add_node(line_elements[2])
 
-    if pattern.group(4):
-        if pattern.group(4).lower() == 'ac':
-            ac_value = pattern.group(7)
-        dc_value = pattern.group(7)
+    ac_pattern = re.search(
+        r'([AD]C) ([0-9.]*[FPNUMKGT]?)V? ([0-9.]*)?', line.replace('=', ' ').replace(',', ' '), re.I)
+
+    if ac_pattern:
+        if ac_pattern.group(1).lower() == 'ac':
+            abs_ac = unit_transform(ac_pattern.group(2))
+            arg_ac = unit_transform(ac_pattern.group(3))
+        else:
+            dc_value = pattern.group(4)
 
     element = Element.VSrc(name=line_elements[0], n1=n1, n2=n2,
-                           dc_value=dc_value, ac_value=ac_value)
+                           dc_value=dc_value, abs_ac=abs_ac, arg_ac=arg_ac)
 
     return [element]
 

@@ -1,10 +1,7 @@
 import cmath
 import numpy as np
 import matplotlib.pyplot as plt
-<<<<<<< HEAD
 from scipy import sparse
-=======
->>>>>>> origin/master
 
 
 import parser
@@ -13,16 +10,16 @@ import analysis
 
 
 def simulate():
-    mycircuit, elements = parser.parse('dc_sweep_test.sp')
+    mycircuit, elements = parser.parse('ac_test.sp')
 
-    mna, rhs = stamp.stamp(mycircuit=mycircuit, elements=elements, s=None, ac=None)
-
-    op_result = analysis.op(mna=mna, rhs=rhs)
+    op_result = None
     dc_result = None
     ac_result = None
     tran_result = None
 
     if mycircuit.op:
+        mna, rhs = stamp.stamp(mycircuit=mycircuit, elements=elements, s=None, ac=None)
+        op_result = analysis.op(mna=mna, rhs=rhs)
         print("Operating Point:\n", op_result, "\n")
 
     if mycircuit.dc:
@@ -32,7 +29,6 @@ def simulate():
                                       source=mycircuit.dc_source, sweep_type=mycircuit.dc_type)
         x = np.linspace(mycircuit.dc_start, mycircuit.dc_stop, mycircuit.dc_point_number, endpoint=True)
         rslt_num = len(dc_result)
-<<<<<<< HEAD
         y = np.zeros(len(x))
         for i in range(len(dc_result[0]) - 1):
             for j in range(rslt_num):
@@ -40,9 +36,9 @@ def simulate():
 
             plt.plot(x, y, linewidth=1.0, linestyle="-")
             plt.xlim(mycircuit.dc_start, mycircuit.dc_stop)
-            plt.xticks(np.linspace(mycircuit.dc_start, mycircuit.dc_stop, mycircuit.dc_point_number / 10, endpoint=True))
-            ymax = max(y, key=lambda a: a) * 1.2
-            ymin = min(y, key=lambda a: a) * 1.2
+            plt.xticks(np.linspace(mycircuit.dc_start, mycircuit.dc_stop, 5, endpoint=True))
+            ymax = max(y, key=lambda a: a)
+            ymin = min(y, key=lambda a: a)
             plt.yticks(np.linspace(ymax, ymin, 5, endpoint=True))
             plt.xlabel('x')
             plt.ylabel('y')
@@ -58,38 +54,38 @@ def simulate():
 
             plt.savefig("DC sweep result.png", dpi=288)
             plt.show()
-=======
-        y = []
-        for i in range(rslt_num):
-            for j in range(len(x)):
-                y += [dc_result[i][j]]
-
-                plt.plot(x, y, linewidth=1.0, linestyle="-")
-                plt.xlim(mycircuit.dc_start, mycircuit.dc_stop)
-                plt.xticks(np.linspace(mycircuit.dc_start, mycircuit.dc_stop, mycircuit.dc_point_number / 10, endpoint=True))
-                ymax = max(y, key=lambda a: a) * 1.2
-                ymin = min(y, key=lambda a: a) * 1.2
-                plt.yticks(np.linspace(ymax, ymin, 5, endpoint=True))
-                plt.xlabel('x')
-                plt.ylabel('y')
-                plt.title('DC sweep result\n', fontsize=12)
-
-                ax = plt.gca()
-                ax.spines['right'].set_color('none')
-                ax.spines['top'].set_color('none')
-                ax.xaxis.set_ticks_position('bottom')
-                ax.spines['bottom'].set_position(('data', 0))
-                ax.yaxis.set_ticks_position('left')
-                ax.spines['left'].set_position(('data', 0))
-
-                plt.savefig("DC sweep result.png", dpi=288)
-                plt.show()
->>>>>>> origin/master
 
     if mycircuit.ac:
         ac_result = analysis.ac(mycircuit=mycircuit, elements=elements,
                                 start=mycircuit.ac_start, stop=mycircuit.ac_stop, point_number=mycircuit.ac_point_number,
                                 sweep_type=mycircuit.ac_type)
+
+        if mycircuit.ac_type.upper() == 'LIN':
+            x = np.linspace(mycircuit.ac_start, mycircuit.ac_stop, mycircuit.ac_point_number, endpoint=True)
+        elif mycircuit.ac_type.upper() == 'LOG':
+            x = 10 ** (np.linspace(np.log10(mycircuit.ac_start), np.log10(mycircuit.ac_stop), mycircuit.ac_point_number))
+        else:
+            pass
+
+        rslt_num = len(ac_result)
+        y = np.zeros(len(x))
+        for i in range(len(ac_result[0]) - 1):
+            for j in range(rslt_num):
+                y[j] = get_complex_magnitude(ac_result[j][i][0])
+
+            plt.plot(x, y, linewidth=1.0, linestyle="-")
+            plt.xlim(mycircuit.ac_start, mycircuit.ac_stop)
+            plt.xticks(
+                np.linspace(mycircuit.ac_start, mycircuit.ac_stop, 5, endpoint=True))
+            ymax = max(y, key=lambda a: a)
+            ymin = min(y, key=lambda a: a)
+            plt.yticks(np.linspace(ymax, ymin, 5, endpoint=True))
+            plt.xlabel('x')
+            plt.ylabel('y')
+            plt.title('AC result (/V)\n', fontsize=12)
+
+            plt.savefig("AC result.png", dpi=288)
+            plt.show()
 
     if mycircuit.tran:
         t, tran_result = analysis.tran(mycircuit=mycircuit, elements=elements,
@@ -100,8 +96,8 @@ def simulate():
         plt.plot(t, y, linewidth=1.0, linestyle="-")
         plt.xlim(mycircuit.dc_start, mycircuit.dc_stop)
         plt.xticks(np.linspace(mycircuit.dc_start, mycircuit.dc_stop, mycircuit.dc_point_number / 10, endpoint=True))
-        ymax = max(y, key=lambda a: a) * 1.2
-        ymin = min(y, key=lambda a: a) * 1.2
+        ymax = max(y, key=lambda a: a)
+        ymin = min(y, key=lambda a: a)
         plt.yticks(np.linspace(ymax, ymin, 5, endpoint=True))
         plt.xlabel('x')
         plt.ylabel('y')

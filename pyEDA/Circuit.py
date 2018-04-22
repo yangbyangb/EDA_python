@@ -72,13 +72,13 @@ class Circuit(list):
         element = Element.Inductor(name=name, n1=n1, n2=n2, value=value, ic=ic)
         self.append(element)
 
-    def add_diode(self, name, n1, n2, model_label, models=None, Area=None, ic=None, off=False):
+    def add_diode(self, name, n1, n2, model_label, models=None, area=None, ic=None, off=False):
         n1 = self.add_node(n1)
         n2 = self.add_node(n2)
         if models is None:
             models = self.models
         element = Element.diode(name=name, n1=n1, n2=n2, model=models[
-            model_label], AREA=Area, ic=ic, off=off)
+            model_label], area=area, ic=ic, off=off)
         self.append(element)
 
     def add_mos(self, name, nd, ng, ns, nb, type, w, l):
@@ -89,10 +89,10 @@ class Circuit(list):
         element = Element.mos(name=name, nd=nd, ng=ng, ns=ns, nb=nb, type=type, w=w, l=l)
         self.append(element)
 
-    def add_vsrc(self, name, n1, n2, dc_value, ac_value=0):
+    def add_vsrc(self, name, n1, n2, dc_value, abs_ac=0, arg_ac=0):
         n1 = self.add_node(n1)
         n2 = self.add_node(n2)
-        element = Element.VSrc(name=name, n1=n1, n2=n2, dc_value=dc_value, ac_value=ac_value)
+        element = Element.VSrc(name=name, n1=n1, n2=n2, dc_value=dc_value, abs_ac=abs_ac, arg_ac=arg_ac)
         self.append(element)
 
     def add_v_pulse_src(self, name, n1, n2, voltage_low, voltage_high, delay, rise, fall, width, period):

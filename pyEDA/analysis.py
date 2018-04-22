@@ -38,7 +38,7 @@ def ac(mycircuit, elements, start, stop, point_number, sweep_type=None):
     else:
         pass
 
-    if omega:
+    if omega.all():
         for omg in omega:
             s = 1j * omg
             mna, rhs = stamp.stamp(mycircuit=mycircuit, elements=elements, s=s, ac=True)
@@ -107,7 +107,7 @@ def v_pulse_tran(t, element):
 
 
 def log_sweep(start, stop, point_number):
-    x = 10 ** (np.linspace(np.log10(stop), np.log10(start), point_number))
+    x = 10 ** (np.linspace(np.log10(start), np.log10(stop), point_number))
     return x
 
 

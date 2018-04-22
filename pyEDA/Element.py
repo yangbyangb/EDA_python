@@ -88,13 +88,13 @@ class mos(Element):
 
 class VSrc(Element):
 
-    def __init__(self, name, n1, n2, dc_value, ac_value=0):
+    def __init__(self, name, n1, n2, dc_value, abs_ac=0, arg_ac=0):
         self.name = name
         self.dc_value = dc_value
         self.n1 = n1
         self.n2 = n2
-        self.abs_ac = np.abs(ac_value) if ac_value else None
-        self.arg_ac = np.angle(ac_value) if ac_value else None
+        self.abs_ac = abs_ac
+        self.arg_ac = arg_ac
         self.is_nonlinear = False
         self.is_symbolic = True
         self.is_v_pulse = True

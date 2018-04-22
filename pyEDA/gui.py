@@ -4,11 +4,7 @@ import pyEDA
 root = tkinter.Tk()
 
 root.title("Python Spice by YB")
-<<<<<<< HEAD
-root.geometry('800x800')
-=======
-root.geometry('700x800')
->>>>>>> origin/master
+root.geometry('900x1000')
 root.resizable(width=True, height=True)  # 宽不可变, 高可变
 
 fm = tkinter.Frame(root)
