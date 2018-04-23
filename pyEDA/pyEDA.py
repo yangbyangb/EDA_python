@@ -10,12 +10,7 @@ import analysis
 
 
 def simulate():
-    mycircuit, elements = parser.parse('ac_test.sp')
-
-    op_result = None
-    dc_result = None
-    ac_result = None
-    tran_result = None
+    mycircuit, elements = parser.parse('mos_test.sp')
 
     if mycircuit.op:
         mna, rhs = stamp.stamp(mycircuit=mycircuit, elements=elements, s=None, ac=None)

@@ -5,6 +5,7 @@ import sympy
 
 def stamp(mycircuit, elements,
           ID=0, VD=0,
+          vgs=0, vds=0,
           dc_sweep_source=None, dc_sweep_v_value=None,
           ac=False, s=None,
           tran=False, vpulse_cur_value=None, t=0, v_t_minus_h=None, i_t_minus_h=None):
@@ -67,7 +68,7 @@ def stamp(mycircuit, elements,
                 mna = stamp_d_mna(mna, element, VD)
                 rhs = stamp_d_rhs(rhs, element, ID, VD)
             elif name[0] == 'm':  # MOSFET
-                mna = stamp_mos_mna(mna, element)
+                mna = stamp_mos_mna(mna, element, vgs, vds)
                 rhs = stamp_mos_rhs(rhs, element)
             elif name[0] == 'e':  # vcvs
                 mna = stamp_vcvs_mna(mna, element)
@@ -196,8 +197,15 @@ def stamp_d_rhs(rhs, element, ID, VD):
     return rhs
 
 
-def stamp_mos_mna(mna, element):
-
+def stamp_mos_mna(mna, element, vgs, vds):
+    mna[element.nd, element.nd] += mos_gds(vgs, vds, element.w, element.l, element.model)
+    mna[element.nd, element.ns] -=\
+        mos_gds(vgs, vds, element.w, element.l, element.model) + mos_gm(vgs, vds, element.w, element.l, element.model)
+    mna[element.nd, element.ng] += mos_gm(vgs, vds, element.w, element.l, element.model)
+    mna[element.ns, element.nd] -= mos_gds(vgs, vds, element.w, element.l, element.model)
+    mna[element.ns, element.ns] += \
+        mos_gds(vgs, vds, element.w, element.l, element.model) + mos_gm(vgs, vds, element.w, element.l, element.model)
+    mna[element.ns, element.ng] -= mos_gm(vgs, vds, element.w, element.l, element.model)
 
     return mna
 
@@ -206,6 +214,102 @@ def stamp_mos_rhs(rhs, element):
 
 
     return rhs
+
+
+def mos_id(vgs, vds, w, l, model):
+    if model == "nmos":
+        # nmos parameters
+        lamda = 0.06
+        vt = 0.43
+        para = 0.5 * (115 * 1E-06) * w / l
+
+    if model == "pmos":
+        lamda = 0.1
+        vt = 0.4
+        para = 0.5 * (30 * 1E-06) * w / l
+        vgs = -vgs
+        vds = -vds
+
+    vgt = vgs - vt;
+    if vds <= (-vgt + vds):
+        idrain = (-1) * para * ((vgt - vds) ** 2) * (1 - lamda * vds)
+    if (vds > (-vgt + vds)) and (vds <= 0):
+        idrain = (-1) * para * (2 * (vgt - vds) * (-vds) - (vds ** 2)) * (1 - lamda * vds)
+    if (vds > 0) and (vds <= vgt):
+        idrain = para * (2 * (vgt) * (vds) - (vds ** 2)) * (1 + lamda * vds)
+    if vds > vgt:
+        idrain = para * (vgt ** 2) * (1 + lamda * vds)
+    # if (vgt<=0):
+        # idrain=0
+
+    if model == "nmos":
+        return idrain
+    if model == "pmos":
+        return -idrain
+
+
+def mos_gm(vgs, vds, w, l, model):
+    if model == "nmos":
+        # nmos parameters
+        lamda = 0.06
+        vt = 0.43
+        para = 0.5 * (115 * 1E-06) * w / l
+
+    if model == "pmos":
+        lamda = 0.1
+        vt = 0.4
+        para = 0.5 * (30 * 1E-06) * w / l
+        vgs = -vgs
+        vds = -vds
+
+    vgt = vgs - vt
+    if vds <= (-vgt + vds):
+        mosgm = -para * 2 * (vgt - vds) * (1 - lamda * vds)
+    if (vds > (-vgt + vds)) and (vds <= 0):
+        mosgm = para * 2 * vds * (1 - lamda * vds)
+    if (vds > 0) and (vds <= vgt):
+        mosgm = para * 2 * vds * (1 + lamda * vds)
+    if vds > vgt:
+        mosgm = para * 2 * (vgs - vt) * (1 + lamda * vds)
+    # if (vgt<=0):
+        # mosgm= 0;
+
+    if model == "pmos":
+        return mosgm
+    if model == "nmos":
+        return mosgm
+
+
+def mos_gds(vgs, vds, w, l, model):
+    if model == "nmos":
+        # nmos parameters
+        lamda = 0.06
+        vt = 0.43
+        para = 0.5 * (115 * 1E-06) * w / l
+
+    if model == "pmos":
+        lamda = 0.1
+        vt = 0.4
+        para = 0.5 * (30 * 1E-06) * w / l
+        vgs = -vgs
+        vds = -vds
+
+    vgt = vgs - vt
+    if vds <= (-vgt + vds):
+        mosgds = para * ((vgt - vds) ** 2) * lamda
+    if (vds > (-vgt + vds)) and (vds <= 0):
+        mosgds = -3 * para * lamda * (vds ** 2) + 2 * para * vds - 4 * para * lamda * vds * (vgt - vds) + 2 * para * (vgt - vds)
+    if (vds > 0) and (vds <= vgt):
+        mosgds = -3 * para * lamda * (vds ** 2) - 2 * para * vds + 4 * para * lamda * vds * vgt + 2 * para * vgt
+    if vds > vgt:
+        mosgds = para * (vgt ** 2) * lamda
+    # if (vgt<=0):
+        # mosgds=0;
+
+    if model == "pmos":
+        return mosgds
+    if model == "nmos":
+        return mosgds
 
 
 def stamp_rhs(rhs, element, dc_sweep_v_value=None, tran_stamp_value=None, s=None):

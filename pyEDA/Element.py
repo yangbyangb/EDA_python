@@ -76,13 +76,13 @@ class diode(Element):
 
 
 class mos(Element):
-    def __init__(self, name, nd, ng, ns, nb, type, w, l):
+    def __init__(self, name, nd, ng, ns, nb, model, w, l):
         self.name = name
         self.nd = nd
         self.ng = ng
         self.ns = ns
         self.nb = nb
-        self.type = type  # n/p
+        self.model = model  # n/p
         self.w = w
         self.l = l
         self.is_v_pulse = False

@@ -67,16 +67,27 @@ def tran(mycircuit, elements, start, stop, step):
                 vpulse_cur_value = v_pulse_tran(t, element)
 
         if t == 0:
-            mna, rhs = stamp.stamp(mycircuit=mycircuit, elements=elements, t=t, vpulse_cur_value=vpulse_cur_value)
-            previous_result = op(mna, rhs)
+            if mycircuit.has_nonlinear:
+                previous_result = \
+                    mos_iter(mycircuit=mycircuit, elements=elements, t=t, vpulse_cur_value=vpulse_cur_value)
+            else:
+                mna, rhs = stamp.stamp(mycircuit=mycircuit, elements=elements, t=t, vpulse_cur_value=vpulse_cur_value)
+                previous_result = op(mna, rhs)
             if t >= start:
                 result += [previous_result]
             else:
                 pass
         elif t <= stop:
-            mna, rhs = stamp.stamp(mycircuit=mycircuit, elements=elements, vpulse_cur_value=vpulse_cur_value,
-                                   t=t, v_t_minus_h=previous_result, i_t_minus_h=previous_result)
-            previous_result = op(mna, rhs)
+            if mycircuit.has_nonlinear:
+                previous_result = mos_iter(mycircuit=mycircuit,
+                                           elements=elements, vpulse_cur_value=vpulse_cur_value,
+                                           t=t, v_t_minus_h=previous_result, i_t_minus_h=previous_result)
+            else:
+                mna, rhs = stamp.stamp(mycircuit=mycircuit,
+                                       vgs=0, vds=0,
+                                       elements=elements, vpulse_cur_value=vpulse_cur_value,
+                                       t=t, v_t_minus_h=previous_result, i_t_minus_h=previous_result)
+                previous_result = op(mna, rhs)
             if t >= start:
                 result += [previous_result]
             else:
@@ -118,6 +129,7 @@ def diode_iter(mycircuit, elements,
                tran=False, vpulse_cur_value=None, t=0, v_t_minus_h=None, i_t_minus_h=None):
     node_num = mycircuit.get_nodes_number()
     result = np.zeros(node_num)
+    # set initial value
     for element in elements:
         element = element[0]
         name = element.name.lower()
@@ -146,6 +158,7 @@ def diode_iter(mycircuit, elements,
 
         mna, rhs = stamp.stamp(mycircuit=mycircuit, elements=elements,
                                ID=ID, VD=VD,
+                               vgs=0, vds=0,
                                dc_sweep_source=dc_sweep_source, dc_sweep_v_value=dc_sweep_v_value,
                                ac=ac, s=s,
                                tran=tran, vpulse_cur_value=vpulse_cur_value,
@@ -153,6 +166,55 @@ def diode_iter(mycircuit, elements,
         result = op(mna, rhs)
 
         cur_result = ID
+
+    return result
+
+
+def mos_iter(mycircuit, elements,
+             dc_sweep_source=None, dc_sweep_v_value=None,
+             ac=False, s=None,
+             tran=False, vpulse_cur_value=None, t=0, v_t_minus_h=None, i_t_minus_h=None):
+
+    node_num = mycircuit.get_nodes_number()
+    result = np.zeros(node_num)
+    # set initial value
+    for element in elements:
+        element = element[0]
+        name = element.name.lower()
+        if name:
+            if name[0] == 'm':
+                result[element.ng] = 1
+                result[element.nd] = 1
+
+    pre_vgs = 1
+    pre_vds = 1
+    cur_vgs = 0
+    cur_vds = 0
+    delta = 1e-12
+
+    while True:
+        if (abs(pre_vgs - cur_vgs) < delta) and (abs(pre_vds - cur_vds) < delta):
+            break
+
+        pre_vgs = cur_vgs
+        pre_vds = cur_vds
+
+        for element in elements:
+            element = element[0]
+            name = element.name.lower()
+            if name:
+                if name[0] == 'm':
+                    cur_vgs = result[element.ng] - result[element.ns]
+                    cur_vds = result[element.nd] - result[element.ns]
+
+        mna, rhs = stamp.stamp(mycircuit=mycircuit, elements=elements,
+                               ID=0, VD=0,
+                               vgs=cur_vgs, vds=cur_vds,
+                               dc_sweep_source=dc_sweep_source, dc_sweep_v_value=dc_sweep_v_value,
+                               ac=ac, s=s,
+                               tran=tran, vpulse_cur_value=vpulse_cur_value,
+                               t=t, v_t_minus_h=v_t_minus_h, i_t_minus_h=i_t_minus_h)
+        result = op(mna, rhs)
 
     return result
 
