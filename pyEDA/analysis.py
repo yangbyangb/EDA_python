@@ -118,7 +118,13 @@ def diode_iter(mycircuit, elements,
                tran=False, vpulse_cur_value=None, t=0, v_t_minus_h=None, i_t_minus_h=None):
     node_num = mycircuit.get_nodes_number()
     result = np.zeros(node_num)
-    pre_result = 0
+    for element in elements:
+        element = element[0]
+        name = element.name.lower()
+        if name:
+            if name[0] == 'd':
+                result[element.n1] = 1
+    pre_result = 1
     cur_result = 0
     delta = 1e-12
     VD = 0
@@ -136,7 +142,7 @@ def diode_iter(mycircuit, elements,
             if name:
                 if name[0] == 'd':
                     VD = result[element.n1] - result[element.n2]
-                    ID = math.exp(40 * VD) - 1
+                    ID = math.exp(40 * np.real(VD)) - 1
 
         mna, rhs = stamp.stamp(mycircuit=mycircuit, elements=elements,
                                ID=ID, VD=VD,

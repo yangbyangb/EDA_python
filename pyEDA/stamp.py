@@ -179,7 +179,7 @@ def stamp_ccvs_mna(mna, element):  # h
 
 
 def stamp_d_mna(mna, element, VD):
-    G = 40 * math.exp(40 * VD)
+    G = 40 * math.exp(40 * np.real(VD))
     mna[element.n1, element.n1] += G
     mna[element.n2, element.n2] += G
     mna[element.n1, element.n2] -= G
@@ -188,7 +188,7 @@ def stamp_d_mna(mna, element, VD):
 
 
 def stamp_d_rhs(rhs, element, ID, VD):
-    G = 40 * math.exp(40 * VD)
+    G = 40 * math.exp(40 * np.real(VD))
     I = ID - G * VD
 
     rhs[element.n1] += I

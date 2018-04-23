@@ -1,7 +1,7 @@
 import cmath
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy import sparse
+import math
 
 
 import parser
@@ -10,7 +10,7 @@ import analysis
 
 
 def simulate():
-    mycircuit, elements = parser.parse('diode_test.sp')
+    mycircuit, elements = parser.parse('ac_test.sp')
 
     op_result = None
     dc_result = None
@@ -32,7 +32,8 @@ def simulate():
         y = np.zeros(len(x))
         for i in range(len(dc_result[0]) - 1):
             for j in range(rslt_num):
-                y[j] = dc_result[j][i]
+                y[j] = dc_result[j][i][0]
+                # y[j] = math.exp(40 * np.real(dc_result[j][i][0])) - 1  # i of diode
 
             plt.plot(x, y, linewidth=1.0, linestyle="-")
             plt.xlim(mycircuit.dc_start, mycircuit.dc_stop)
@@ -43,6 +44,7 @@ def simulate():
             plt.xlabel('x')
             plt.ylabel('y')
             plt.title('Node %d DC sweep result\n' % (i+1), fontsize=12)
+            # plt.title('i-v of diode\n', fontsize=12)
 
             ax = plt.gca()
             ax.spines['right'].set_color('none')
@@ -53,6 +55,7 @@ def simulate():
             ax.spines['left'].set_position(('data', 0))
 
             plt.savefig("Node %d DC sweep result.png" % (i+1), dpi=288)
+            # plt.savefig('i-v of diode\n', dpi=288)
             plt.show()
 
     if mycircuit.ac:
