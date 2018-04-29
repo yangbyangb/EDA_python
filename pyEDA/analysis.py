@@ -176,7 +176,7 @@ def mos_iter(mycircuit, elements,
              tran=False, vpulse_cur_value=None, t=0, v_t_minus_h=None, i_t_minus_h=None):
 
     node_num = mycircuit.get_nodes_number()
-    result = np.zeros(node_num)
+    result = np.zeros(node_num + 1)  # ???
     # set initial value
     for element in elements:
         element = element[0]
@@ -192,8 +192,11 @@ def mos_iter(mycircuit, elements,
     cur_vds = 0
     delta = 1e-12
 
+    i = 0
     while True:
-        if (abs(pre_vgs - cur_vgs) < delta) and (abs(pre_vds - cur_vds) < delta):
+        print('mos iter round %d' % i)
+        i += 1
+        if (abs(np.real(pre_vgs - cur_vgs)) < delta) and (abs(np.real(pre_vds - cur_vds)) < delta):
             break
 
         pre_vgs = cur_vgs
@@ -215,6 +218,7 @@ def mos_iter(mycircuit, elements,
                                tran=tran, vpulse_cur_value=vpulse_cur_value,
                                t=t, v_t_minus_h=v_t_minus_h, i_t_minus_h=i_t_minus_h)
         result = op(mna, rhs)
+        print(result)
 
     return result
 

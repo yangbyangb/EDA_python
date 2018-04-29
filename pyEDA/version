@@ -6,3 +6,4 @@
 0.8.5 tran and diode added but don't plot correct
 0.8.6 diode succeeded
 0.8.7 mos added but not tested; tran plot not correct
+0.8.8 modifying gui; prepare to reform project structure

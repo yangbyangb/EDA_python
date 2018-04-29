@@ -1,10 +1,9 @@
 *netlist example 2
-*VIN 1 0 PULSE 0 5 2NS 2NS 2NS 30NS 60NS
-Vin 1 0 AC 1V 180
-R1 1 2 1
-C1 2 0 1u
-*I1 1 0 1
-L1 1 2 1m
-.ac LIN 100 1 100HZ
-*.tran 1ns 1000ns
+R1 1 0 5
+G2 1 0 1 2 2
+R3 1 2 6
+R4 2 0 8
+vin 1 0 5
+.op
+.dc vin 0.25 5.0 0.25
 .end

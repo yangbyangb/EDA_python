@@ -57,9 +57,9 @@ def stamp(mycircuit, elements,
                     else:
                         rhs = stamp_rhs(rhs, element)
                 elif vpulse_cur_value:
-                    rhs = stamp_rhs(rhs, element, tran_stamp_value=vpulse_cur_value)
+                    rhs = stamp_rhs(rhs, element, vpulse_cur_value=vpulse_cur_value)
                 elif mycircuit.ac:
-                    rhs = stamp_rhs(rhs, element, s=s)
+                    rhs = stamp_rhs(rhs, element)
                 else:
                     rhs = stamp_rhs(rhs, element)
             elif name[0] == 'i':  # current source
@@ -69,7 +69,7 @@ def stamp(mycircuit, elements,
                 rhs = stamp_d_rhs(rhs, element, ID, VD)
             elif name[0] == 'm':  # MOSFET
                 mna = stamp_mos_mna(mna, element, vgs, vds)
-                rhs = stamp_mos_rhs(rhs, element)
+                rhs = stamp_mos_rhs(rhs, element, vgs, vds)
             elif name[0] == 'e':  # vcvs
                 mna = stamp_vcvs_mna(mna, element)
                 rhs = stamp_rhs(rhs, element)
@@ -210,13 +210,15 @@ def stamp_mos_mna(mna, element, vgs, vds):
     return mna
 
 
-def stamp_mos_rhs(rhs, element):
-
+def stamp_mos_rhs(rhs, element, vgs, vds):
+    rhs[element.nd] -= mos_id(vgs=vgs, vds=vds, w=element.w, l=element.l, model=element.model)
+    rhs[element.ns] += mos_id(vgs=vgs, vds=vds, w=element.w, l=element.l, model=element.model)
 
     return rhs
 
 
 def mos_id(vgs, vds, w, l, model):
+    idrain = 0
     if model == "nmos":
         # nmos parameters
         lamda = 0.06
@@ -249,6 +251,7 @@ def mos_id(vgs, vds, w, l, model):
 
 
 def mos_gm(vgs, vds, w, l, model):
+    mosgm= 0
     if model == "nmos":
         # nmos parameters
         lamda = 0.06
@@ -281,6 +284,7 @@ def mos_gm(vgs, vds, w, l, model):
 
 
 def mos_gds(vgs, vds, w, l, model):
+    mosgds = 0
     if model == "nmos":
         # nmos parameters
         lamda = 0.06
@@ -312,13 +316,15 @@ def mos_gds(vgs, vds, w, l, model):
         return mosgds
 
 
-def stamp_rhs(rhs, element, dc_sweep_v_value=None, tran_stamp_value=None, s=None):
+def stamp_rhs(rhs, element, dc_sweep_v_value=None, vpulse_cur_value=None, tran_stamp_value=None):
     rhs = _add_row_or_column(rhs, add_a_row=True, add_a_column=False)
 
     if dc_sweep_v_value:
         rhs[rhs.shape[0] - 1] = dc_sweep_v_value
     elif tran_stamp_value:
         rhs[rhs.shape[0] - 1] = tran_stamp_value
+    elif element.is_v_pulse:
+        rhs[rhs.shape[0] - 1] = vpulse_cur_value
     else:
         if element.dc_value:
             rhs[rhs.shape[0] - 1] = element.dc_value

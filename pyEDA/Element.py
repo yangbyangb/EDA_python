@@ -117,6 +117,7 @@ class VPulseSrc(Element):
         self.fall = fall
         self.width = width
         self.period = period
+
         self.is_v_pulse = True
 
 

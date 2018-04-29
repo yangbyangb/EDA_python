@@ -66,7 +66,8 @@ def parse(filename):
             mos_pattern = re.match(r'^M.*', line, re.I)
 
             v_pattern = re.match(r'^V.*', line, re.I)
-            v_pulse_pattern = re.match(r'(^V.*) (.*) (.*) PULSE (.*) (.*) (.*) (.*) (.*) (.*) (.*)', line, re.I)
+            ispulse = re.search(r'PULSE', line, re.I)
+
             i_pattern = re.match(r'^I.*', line, re.I)
 
             e_pattern = re.match(r'^E.', line, re.I)
@@ -87,9 +88,10 @@ def parse(filename):
                 element = parse_mos(line, mycircuit)
                 mycircuit.has_nonlinear = True
             elif v_pattern:
-                element = parse_vsrc(line, mycircuit)
-            elif v_pulse_pattern:
-                element = parse_v_pulse_src(line, mycircuit)
+                if ispulse:
+                    element = parse_v_pulse_src(line, mycircuit)
+                else:
+                    element = parse_vsrc(line, mycircuit)
             elif i_pattern:
                 element = parse_isrc(line, mycircuit)
             elif e_pattern:
@@ -161,30 +163,30 @@ def parse_inductor(line, mycircuit):
     return [element]
 
 
-def parse_diode(line, mycircuit, models=None):
+def parse_diode(line, mycircuit):
 
     line_elements = line.split()
 
     n1 = mycircuit.add_node(line_elements[1])
     n2 = mycircuit.add_node(line_elements[2])
 
-    model_label = line_elements[3]
+    model = line_elements[3]
 
     area = line_elements[4]
 
-    element = Element.diode(name=line_elements[0], n1=n1, n2=n2, model=model_label, area=area)
+    element = Element.diode(name=line_elements[0], n1=n1, n2=n2, model=model, area=area)
 
     return [element]
 
 
-def parse_mos(line, mycircuit, models=None):
+def parse_mos(line, mycircuit):
 
     line_elements = line.split()
     nd = mycircuit.add_node(line_elements[1])
     ng = mycircuit.add_node(line_elements[2])
     ns = mycircuit.add_node(line_elements[3])
     nb = mycircuit.add_node(line_elements[4])
-    model_label = line_elements[5]
+    model = line_elements[5]
 
     w = None
     l = None
@@ -202,7 +204,7 @@ def parse_mos(line, mycircuit, models=None):
     elif pattern.group(9).lower() == 'l':
         l = unit_transform(pattern.group(10))
 
-    element = Element.mos(line_elements[0], nd, ng, ns, nb, w, l, models[model_label])
+    element = Element.mos(name=line_elements[0], nd=nd, ng=ng, ns=ns, nb=nb, model=model, w=w, l=l)
 
     return [element]
 
@@ -237,19 +239,19 @@ def parse_vsrc(line, mycircuit):
 
 def parse_v_pulse_src(line, mycircuit):
 
-    pattern = re.match(r'(^V.*) (.*) (.*) PULSE (.*) (.*) (.*)S? (.*)S? (.*)S? (.*)S? (.*)S?', line, re.I)
+    pattern = re.match(r'(^V.*) (.*) (.*) PULSE (.*) (.*) (.*) (.*) (.*) (.*) (.*)', line, re.I)
                     #    1      2    3          4    5    6      7      8      9      10
 
     name = pattern.group(1)
     n1 = mycircuit.add_node(pattern.group(2))
     n2 = mycircuit.add_node(pattern.group(3))
-    voltage_low = unit_transform(pattern.group(4))
-    voltage_high = unit_transform(pattern.group(5))
-    delay = unit_transform(pattern.group(6))
-    rise = unit_transform(pattern.group(7))
-    fall = unit_transform(pattern.group(8))
-    width = unit_transform(pattern.group(9))
-    period = unit_transform(pattern.group(10))
+    voltage_low = unit_transform(pattern.group(4).lower().replace('v', ''))
+    voltage_high = unit_transform(pattern.group(5).lower().replace('v', ''))
+    delay = unit_transform(pattern.group(6).lower().replace('s', ''))
+    rise = unit_transform(pattern.group(7).lower().replace('s', ''))
+    fall = unit_transform(pattern.group(8).lower().replace('s', ''))
+    width = unit_transform(pattern.group(9).lower().replace('s', ''))
+    period = unit_transform(pattern.group(10).lower().replace('s', ''))
 
     element = Element.VPulseSrc(name=name, n1=n1, n2=n2,
                                 voltage_low=voltage_low, voltage_high=voltage_high,
